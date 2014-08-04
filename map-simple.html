@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDguybeOb8pyPQSz82Za6wgPZhKM0atHo0">
+    </script>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript">
+      var geocoder;
+      var map;
+      function initialize() {
+        geocoder = new google.maps.Geocoder();
+        var latlng = new google.maps.LatLng(52.22967560, 21.01222870);
+        var mapOptions = {
+          zoom: 10,
+          center: latlng
+        }
+        map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+        $("#address").val(localStorage.getItem('address'));
+      }
+
+      idx = 0;
+      toGeocode = [];
+
+      function addPin(location) {
+
+        if (typeof location == "string") {
+          var x = location.replace("(","").replace(")","").split(", ");
+          location = { lat: parseFloat(x[0]), lng: parseFloat(x[1]) }
+        }
+
+        map.panTo(location);
+
+        var circle ={
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: 'red',
+            fillOpacity: .5,
+            scale: 5.5,
+            strokeColor: 'white',
+            strokeWeight: 0
+        };
+
+        var marker = new google.maps.Marker({
+            map: map,
+            animation: google.maps.Animation.DROP,
+            position: location,
+            icon: circle
+        });
+      }
+
+      setInterval(function() {
+
+
+          if (idx < toGeocode.length) {
+            var address = toGeocode[idx];
+            idx++;
+
+
+            if (localStorage.getItem(address) == undefined) {
+              geocoder.geocode( { 'address': address}, function(results, status) {
+                if (status == google.maps.GeocoderStatus.OK) {
+                  addPin(results[0].geometry.location);
+                  localStorage.setItem(address, results[0].geometry.location);
+                  console.log("Geocode " + address);
+                } else {
+                  console.log("Geocode was not successful for the following reason: " + status);
+                }
+              });
+            } else {//localstorage if
+              addPin(localStorage.getItem(address));
+            }
+          } //if
+
+      },500);
+
+      function codeAddress() {
+
+        localStorage.setItem("address",$("#address").val())
+        toGeocode = $("#address").val().split("\n");
+        idx = 0;
+
+      }
+
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+   <div id="map-canvas" style="width: 100%; height: 80%;"></div>
+    <div>
+      <textarea id="address" style="width:100%; height:20%;"></textarea>
+      <input type="button" value="Mapa" onclick="codeAddress()">
+    </div>
+  </body>
+</html>
